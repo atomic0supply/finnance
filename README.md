@@ -1,82 +1,56 @@
-FinnanceApp
+# FinnanceApp
 
-Personal Finance App built with shadcn/ui to help you manage and track all your personal expenses, bills, properties, vehicles, and payment schedules in one place.
+FinnanceApp es una aplicación de finanzas personales desarrollada con **Next.js** y **Tailwind CSS**. Permite registrar gastos e ingresos, gestionar propiedades y vehículos y visualizar las fechas de pago de manera sencilla.
 
-🚀 Features
+## Características principales
 
-Service Tracking: Add and monitor recurring services (billed monthly or annually), such as subscriptions, utilities, and memberships.
+- **Seguimiento de servicios**: registra pagos recurrentes mensuales o anuales.
+- **Gestión de propiedades**: asocia facturas o servicios a una vivienda o inmueble.
+- **Gestión de vehículos**: controla impuestos, mantenimientos y gastos del vehículo.
+- **Calendario de pagos**: consulta todas las obligaciones próximas en un calendario interactivo.
+- **Administración de transacciones**: importa y exporta movimientos en CSV o Excel, adjuntando comprobantes si es necesario.
 
-Properties Management: Create entries for each property (home, villa, etc.) and assign bills or services to specific properties.
+## Tecnologías utilizadas
 
-Vehicle Management: Track taxes, services, and maintenance costs for each vehicle you own.
+- **Next.js 15**
+- **React 19**
+- **Tailwind CSS** (componentes shadcn/ui)
+- **TypeScript**
 
-Payment Calendar: View all upcoming payments in an interactive calendar to stay on top of due dates.
+## Puesta en marcha
 
-Responsive UI: Sleek, modern interface powered by shadcn/ui, fully responsive for desktop and mobile.
+1. Clona el repositorio
+   ```bash
+   git clone https://github.com/your-username/finnance.git
+   cd finnance
+   ```
+2. Instala las dependencias
+   ```bash
+   npm install
+   ```
+3. Arranca el servidor de desarrollo
+   ```bash
+   npm run dev
+   ```
 
-Transaction Management: Add, edit, delete and duplicate entries. Import or export transactions as CSV or Excel files and attach receipts.
+La aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
 
-🛠️ Tech Stack
+## Scripts útiles
 
-Framework: React
+El archivo `script.sh` permite iniciar o detener el servidor rápidamente:
 
-UI Library: shadcn/ui (Tailwind CSS-based components)
+```bash
+./script.sh start   # inicia el servidor
+./script.sh stop    # detiene el servidor
+```
 
-State Management: Zustand or Context API
+## Contribución
 
-Data Storage: LocalStorage (for MVP) / SQLite or Postgres (for future expansion)
+1. Haz un _fork_ del proyecto.
+2. Crea una rama para tu funcionalidad `git checkout -b feature/TuFuncionalidad`.
+3. Envía tus cambios mediante un *pull request*.
 
-Calendar: FullCalendar or React Calendar integration
+## Licencia
 
-💾 Installation
+Este proyecto se distribuye bajo licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
 
-Clone the repo
-
-git clone https://github.com/your-username/finnance.git
-cd finnance
-
-Install dependencies
-
-npm install
-# or
-yarn install
-
-Set up shadcn/ui
-
-npx shadcn-ui init
-
-Run the development server
-
-npm run dev
-# or
-yarn dev
-
-Your app should now be running at http://localhost:3000.
-
-⚙️ Usage
-
-Add Services: Navigate to the Services page, click Add Service, fill in name, amount, billing frequency (monthly/annually), and assign to a property or general.
-
-Manage Properties: Go to Properties, click New Property, enter details (name, address), and link bills or services.
-
-Track Vehicles: Under Vehicles, add each vehicle and log taxes, service appointments, maintenance costs.
-
-View Calendar: Open the Calendar view to see payment due dates and filter by category (Services, Properties, Vehicles).
-
-🤝 Contributing
-
-Fork the repository
-
-Create a feature branch (git checkout -b feature/YourFeature)
-
-Commit your changes (git commit -m "feat: Add new feature")
-
-Push to the branch (git push origin feature/YourFeature)
-
-Open a Pull Request
-
-📄 License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-Keep your finances in check and never miss a bill!
