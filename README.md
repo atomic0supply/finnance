@@ -51,6 +51,10 @@ npm install
 # or
 yarn install
 
+Copy environment variables template
+
+cp .env.example .env
+
 Set up shadcn/ui
 
 npx shadcn-ui init
@@ -60,6 +64,12 @@ Run the development server
 npm run dev
 # or
 yarn dev
+
+Run type checks
+
+npm run typecheck
+# or
+yarn typecheck
 
 Your app should now be running at http://localhost:3000.
 
