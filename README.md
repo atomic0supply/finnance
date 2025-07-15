@@ -3,7 +3,7 @@
 [![CI/CD Pipeline](https://github.com/atomic0supply/finnance/actions/workflows/ci.yml/badge.svg)](https://github.com/atomic0supply/finnance/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Personal Finance App built with shadcn/ui to help you manage and track all your personal expenses, bills, properties, vehicles, and payment schedules in one place.
+Aplicación de finanzas personales construida con Next.js y shadcn/ui para gestionar gastos, propiedades, vehículos y calendarios de pago en un solo lugar.
 
 ## 🌳 Estructura del Proyecto
 
@@ -38,40 +38,63 @@ Data Storage: LocalStorage (for MVP) / SQLite or Postgres (for future expansion)
 
 Calendar: FullCalendar or React Calendar integration
 
-💾 Installation
+## 🏗️ Arquitectura
 
-Clone the repo
+La aplicación está construida con **Next.js** utilizando el directorio `src`:
 
+- `app/` contiene las rutas de la interfaz y las API (`api/transactions`).
+- `components/` agrupa componentes reutilizables de React.
+- `services/` incluye la lógica de negocio, como el servicio de transacciones.
+- `data/` almacena datos de ejemplo usados durante el desarrollo.
+
+La documentación de la API se encuentra en [`docs/openapi.yaml`](docs/openapi.yaml) y puede explorarse con cualquier visor de Swagger.
+
+## 🔧 Puesta en marcha
+
+```bash
 git clone https://github.com/your-username/finnance.git
 cd finnance
-
-Install dependencies
-
 npm install
-# or
-yarn install
-
-Copy environment variables template
-
 cp .env.example .env
-
-Set up shadcn/ui
-
 npx shadcn-ui init
-
-Run the development server
-
 npm run dev
-# or
-yarn dev
+```
 
-Run type checks
+Variables de entorno relevantes:
+- `ADMIN_TOKEN` y `USER_TOKEN` para autenticar las peticiones a la API.
 
-npm run typecheck
-# or
-yarn typecheck
+Ejecuta `npm run typecheck` para validar TypeScript. La aplicación estará disponible en `http://localhost:3000`.
 
-Your app should now be running at http://localhost:3000.
+## 📑 Comandos útiles
+
+| Comando            | Descripción                     |
+|--------------------|---------------------------------|
+| `npm run dev`      | Inicia el servidor de desarrollo|
+| `npm test`         | Ejecuta la suite de pruebas     |
+| `npm run lint`     | Revisa el formato del código    |
+| `npm run build`    | Genera la versión de producción |
+| `npm start`        | Sirve la aplicación compilada   |
+
+## 🧪 Tests
+
+Las pruebas están escritas con el runner de Node. Ejecuta:
+
+```bash
+npm test
+```
+
+Se generará un reporte de cobertura en la terminal.
+
+## 🚀 Despliegue
+
+Para generar una build de producción ejecuta:
+
+```bash
+npm run build
+npm start
+```
+
+Estos comandos compilan la aplicación y la sirven en modo producción.
 
 ⚙️ Usage
 
@@ -85,15 +108,7 @@ View Calendar: Open the Calendar view to see payment due dates and filter by cat
 
 🤝 Contributing
 
-Fork the repository
-
-Create a feature branch (git checkout -b feature/YourFeature)
-
-Commit your changes (git commit -m "feat: Add new feature")
-
-Push to the branch (git push origin feature/YourFeature)
-
-Open a Pull Request
+Consulta la guía de contribución en [CONTRIBUTING.md](CONTRIBUTING.md) para conocer el flujo de trabajo y las normas del proyecto.
 
 📄 License
 
