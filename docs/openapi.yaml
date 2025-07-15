@@ -1,0 +1,95 @@
+openapi: 3.0.0
+info:
+  title: Finnance API
+  version: 1.0.0
+  description: |-
+    API para gestionar transacciones financieras.
+    Autenticación mediante tokens Bearer definidos en las variables de entorno `ADMIN_TOKEN` y `USER_TOKEN`.
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/transactions:
+    get:
+      summary: Obtener todas las transacciones
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de transacciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+    post:
+      summary: Crear una transacción
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTransaction'
+      responses:
+        '201':
+          description: Transacción creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Solicitud inválida
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        category:
+          type: string
+        type:
+          type: string
+          enum: [income, expense]
+        amount:
+          type: number
+      required:
+        - id
+        - date
+        - description
+        - category
+        - type
+        - amount
+    NewTransaction:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        category:
+          type: string
+        type:
+          type: string
+          enum: [income, expense]
+        amount:
+          type: number
+      required:
+        - date
+        - description
+        - category
+        - type
+        - amount
