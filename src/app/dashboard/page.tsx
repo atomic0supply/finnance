@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import transactions from '@/data/transactions';
+import dynamic from 'next/dynamic';
+import { useMemo, useState, useEffect } from 'react';
+import type { Transaction } from '@/data/transactions';
 import {
   aggregateByMonth,
   aggregateByYear,
@@ -9,20 +10,33 @@ import {
   Filter,
 } from '@/services/transactionService';
 import FilterControls from '@/components/FilterControls';
-import TransactionsTable from '@/components/TransactionsTable';
-import StatsChart from '@/components/StatsChart';
+const TransactionsTable = dynamic(() => import('@/components/TransactionsTable'));
+const StatsChart = dynamic(() => import('@/components/StatsChart'));
 
 export default function Dashboard() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<Filter>({
     query: '',
     from: '',
     to: '',
     type: 'all',
   });
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
+
+  useEffect(() => {
+    const start = performance.now();
+    fetch('/api/transactions')
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('API response time', performance.now() - start, 'ms');
+        setTransactions(data);
+      });
+  }, []);
 
   const filtered = useMemo(
     () => filterTransactions(transactions, filter),
-    [filter],
+    [transactions, filter],
   );
   const monthly = useMemo(() => aggregateByMonth(filtered), [filtered]);
   const yearly = useMemo(() => aggregateByYear(filtered), [filtered]);
@@ -41,7 +55,12 @@ export default function Dashboard() {
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Transacciones</h2>
-        <TransactionsTable transactions={filtered} />
+        <TransactionsTable
+          transactions={filtered}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
       </section>
 
       <section className="space-y-4">

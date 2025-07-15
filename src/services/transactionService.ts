@@ -7,8 +7,14 @@ export interface Filter {
   type: 'all' | 'income' | 'expense';
 }
 
+const filterCache = new Map<string, Transaction[]>();
+
 export function filterTransactions(data: Transaction[], filter: Filter) {
-  return data.filter((t) => {
+  const key = JSON.stringify(filter);
+  const cached = filterCache.get(key);
+  if (cached) return cached;
+
+  const result = data.filter((t) => {
     const matchQuery = t.description
       .toLowerCase()
       .includes(filter.query.toLowerCase());
@@ -17,6 +23,9 @@ export function filterTransactions(data: Transaction[], filter: Filter) {
     const beforeTo = !filter.to || new Date(t.date) <= new Date(filter.to);
     return matchQuery && matchType && afterFrom && beforeTo;
   });
+
+  filterCache.set(key, result);
+  return result;
 }
 
 export function aggregateByMonth(data: Transaction[]) {
