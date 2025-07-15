@@ -375,6 +375,7 @@ export default function TransactionsPage() {
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                   .map((transaction) => {
                     const associated = getAssociatedName(transaction);
+                    const AssociatedIcon = associated?.icon;
                     
                     return (
                       <TableRow key={transaction.id}>
@@ -395,7 +396,7 @@ export default function TransactionsPage() {
                         <TableCell>
                           {associated && (
                             <div className="flex items-center gap-2">
-                              {associated.icon && <associated.icon className="h-4 w-4" />}
+                              <AssociatedIcon className="h-4 w-4" />
                               <span className="text-sm">{associated.name}</span>
                             </div>
                           )}

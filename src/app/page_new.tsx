@@ -2,12 +2,29 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PublicHeader } from '@/components/PublicHeader';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <PublicHeader />
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center">
+              <h1 className="text-3xl font-bold text-gray-900">Finnance</h1>
+              <span className="ml-2 text-sm text-gray-500">v2.0</span>
+            </div>
+            <div className="flex gap-4">
+              <Link href="/login">
+                <Button variant="ghost">Iniciar Sesión</Button>
+              </Link>
+              <Link href="/register">
+                <Button>Registrarse</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">

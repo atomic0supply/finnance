@@ -1,29 +1,161 @@
 openapi: 3.0.0
 info:
   title: Finnance API
-  version: 1.0.0
+  version: 2.0.0
   description: |-
-    API para gestionar transacciones financieras.
-    Autenticación mediante tokens Bearer definidos en las variables de entorno `ADMIN_TOKEN` y `USER_TOKEN`.
+    API completa para gestión financiera personal con autenticación JWT, sistema de roles y permisos granulares.
+    
+    Características principales:
+    - Autenticación JWT con refresh tokens
+    - Sistema de roles: Admin, User, Viewer
+    - Permisos granulares por recurso y acción
+    - Filtrado automático de datos por usuario
+    - Gestión de transacciones, propiedades, vehículos y servicios
+    
+    Roles disponibles:
+    - **Admin**: Acceso completo a todas las funcionalidades
+    - **User**: Acceso completo a sus propios datos
+    - **Viewer**: Solo lectura de datos propios
 servers:
   - url: http://localhost:3000
+    description: Servidor de desarrollo
+  - url: https://finnance-api.com
+    description: Servidor de producción
 paths:
-  /api/transactions:
-    get:
-      summary: Obtener todas las transacciones
+  # Rutas de Autenticación
+  /api/auth/login:
+    post:
+      summary: Iniciar sesión
+      description: Autentica un usuario y devuelve tokens JWT
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/auth/register:
+    post:
+      summary: Registrar nuevo usuario
+      description: Crea una nueva cuenta de usuario
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Usuario ya existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/auth/refresh:
+    post:
+      summary: Renovar token
+      description: Renueva el token de acceso usando el refresh token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token renovado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Refresh token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/auth/logout:
+    post:
+      summary: Cerrar sesión
+      description: Invalida los tokens del usuario
+      tags:
+        - Authentication
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Lista de transacciones
+          description: Logout exitoso
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Transaction'
-    post:
-      summary: Crear una transacción
+                $ref: '#/components/schemas/Message'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/auth/profile:
+    get:
+      summary: Obtener perfil del usuario
+      description: Obtiene información del usuario autenticado
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Actualizar perfil
+      description: Actualiza información del usuario
+      tags:
+        - Authentication
       security:
         - bearerAuth: []
       requestBody:
@@ -31,47 +163,1263 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewTransaction'
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/auth/change-password:
+    post:
+      summary: Cambiar contraseña
+      description: Cambia la contraseña del usuario
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Contraseña cambiada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # Rutas de Transacciones
+  /api/transactions:
+  /api/transactions:
+    get:
+      summary: Obtener transacciones del usuario
+      description: Obtiene todas las transacciones del usuario autenticado
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Número máximo de transacciones a devolver
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Número de transacciones a omitir
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: type
+          in: query
+          description: Filtrar por tipo de transacción
+          required: false
+          schema:
+            type: string
+            enum: [income, expense]
+        - name: category
+          in: query
+          description: Filtrar por categoría
+          required: false
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          description: Fecha desde (formato YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          description: Fecha hasta (formato YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Lista de transacciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Crear transacción
+      description: Crea una nueva transacción para el usuario autenticado
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
       responses:
         '201':
-          description: Transacción creada
+          description: Transacción creada exitosamente
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
         '400':
-          description: Solicitud inválida
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/transactions/{id}:
+    get:
+      summary: Obtener transacción específica
+      description: Obtiene una transacción específica del usuario
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la transacción
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transacción encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transacción no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Actualizar transacción
+      description: Actualiza una transacción existente
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la transacción
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+      responses:
+        '200':
+          description: Transacción actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Transacción no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Eliminar transacción
+      description: Elimina una transacción del usuario
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la transacción
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Transacción eliminada exitosamente
+        '404':
+          description: Transacción no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/transactions/{id}/duplicate:
+    post:
+      summary: Duplicar transacción
+      description: Crea una copia de una transacción existente
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la transacción a duplicar
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Transacción duplicada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transacción no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # Rutas de Propiedades
+  /api/properties:
+    get:
+      summary: Obtener propiedades del usuario
+      description: Obtiene todas las propiedades del usuario autenticado
+      tags:
+        - Properties
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de propiedades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Property'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Crear propiedad
+      description: Crea una nueva propiedad
+      tags:
+        - Properties
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePropertyRequest'
+      responses:
+        '201':
+          description: Propiedad creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # Rutas de Vehículos
+  /api/vehicles:
+    get:
+      summary: Obtener vehículos del usuario
+      description: Obtiene todos los vehículos del usuario autenticado
+      tags:
+        - Vehicles
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de vehículos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vehicle'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Crear vehículo
+      description: Crea un nuevo vehículo
+      tags:
+        - Vehicles
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVehicleRequest'
+      responses:
+        '201':
+          description: Vehículo creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # Rutas de Servicios
+  /api/services:
+    get:
+      summary: Obtener servicios del usuario
+      description: Obtiene todos los servicios del usuario autenticado
+      tags:
+        - Services
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de servicios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Crear servicio
+      description: Crea un nuevo servicio
+      tags:
+        - Services
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequest'
+      responses:
+        '201':
+          description: Servicio creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/services/upcoming:
+    get:
+      summary: Obtener próximos pagos
+      description: Obtiene servicios con pagos próximos
+      tags:
+        - Services
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: days
+          in: query
+          description: Número de días para considerar próximos
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+      responses:
+        '200':
+          description: Lista de servicios con pagos próximos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UpcomingPayment'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # Rutas de Reportes
+  /api/reports/summary:
+    get:
+      summary: Obtener resumen financiero
+      description: Obtiene un resumen de las finanzas del usuario
+      tags:
+        - Reports
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          description: Período para el resumen
+          required: false
+          schema:
+            type: string
+            enum: [weekly, monthly, quarterly, yearly]
+            default: monthly
+      responses:
+        '200':
+          description: Resumen financiero
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialSummary'
+        '401':
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT token obtenido del endpoint de login
+  
   schemas:
+    # Esquemas de Autenticación
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+        password:
+          type: string
+          minLength: 6
+          description: Contraseña del usuario
+      required:
+        - email
+        - password
+    
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+        password:
+          type: string
+          minLength: 6
+          description: Contraseña del usuario
+        name:
+          type: string
+          minLength: 2
+          description: Nombre completo del usuario
+        role:
+          type: string
+          enum: [user, viewer]
+          default: user
+          description: Rol del usuario
+      required:
+        - email
+        - password
+        - name
+    
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: Token JWT de acceso
+        refreshToken:
+          type: string
+          description: Token para renovar el acceso
+        expiresAt:
+          type: string
+          format: date-time
+          description: Fecha de expiración del token
+      required:
+        - user
+        - token
+        - refreshToken
+        - expiresAt
+    
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: Token de renovación
+      required:
+        - refreshToken
+    
+    ChangePasswordRequest:
+      type: object
+      properties:
+        oldPassword:
+          type: string
+          description: Contraseña actual
+        newPassword:
+          type: string
+          minLength: 6
+          description: Nueva contraseña
+      required:
+        - oldPassword
+        - newPassword
+    
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          description: Nombre del usuario
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+    
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID único del usuario
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+        name:
+          type: string
+          description: Nombre completo del usuario
+        role:
+          type: string
+          enum: [admin, user, viewer]
+          description: Rol del usuario
+        isActive:
+          type: boolean
+          description: Si el usuario está activo
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación
+        lastLogin:
+          type: string
+          format: date-time
+          description: Último login
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+      required:
+        - id
+        - email
+        - name
+        - role
+        - isActive
+        - createdAt
+    
+    UserPreferences:
+      type: object
+      properties:
+        language:
+          type: string
+          enum: [es, en]
+          default: es
+          description: Idioma preferido
+        currency:
+          type: string
+          enum: [USD, EUR, MXN]
+          default: USD
+          description: Moneda preferida
+        theme:
+          type: string
+          enum: [light, dark, auto]
+          default: light
+          description: Tema de la interfaz
+        notifications:
+          type: object
+          properties:
+            email:
+              type: boolean
+              default: true
+            push:
+              type: boolean
+              default: false
+            upcomingPayments:
+              type: boolean
+              default: true
+            budgetAlerts:
+              type: boolean
+              default: true
+    
+    # Esquemas de Transacciones
     Transaction:
       type: object
       properties:
         id:
-          type: integer
-        date:
           type: string
-          format: date
-        description:
-          type: string
-        category:
-          type: string
+          description: ID único de la transacción
         type:
           type: string
           enum: [income, expense]
+          description: Tipo de transacción
+        category:
+          type: string
+          description: Categoría de la transacción
         amount:
           type: number
+          minimum: 0
+          description: Monto de la transacción
+        description:
+          type: string
+          description: Descripción de la transacción
+        date:
+          type: string
+          format: date
+          description: Fecha de la transacción
+        propertyId:
+          type: string
+          description: ID de la propiedad asociada (opcional)
+        vehicleId:
+          type: string
+          description: ID del vehículo asociado (opcional)
+        serviceId:
+          type: string
+          description: ID del servicio asociado (opcional)
+        receipt:
+          type: string
+          description: URL del recibo (opcional)
+        userId:
+          type: string
+          description: ID del usuario propietario
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación
+        updatedAt:
+          type: string
+          format: date-time
+          description: Última actualización
       required:
         - id
-        - date
-        - description
+        - type
         - category
+        - amount
+        - description
+        - date
+        - userId
+        - createdAt
+        - updatedAt
+    
+    CreateTransactionRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [income, expense]
+          description: Tipo de transacción
+        category:
+          type: string
+          description: Categoría de la transacción
+        amount:
+          type: number
+          minimum: 0
+          description: Monto de la transacción
+        description:
+          type: string
+          description: Descripción de la transacción
+        date:
+          type: string
+          format: date
+          description: Fecha de la transacción
+        propertyId:
+          type: string
+          description: ID de la propiedad asociada (opcional)
+        vehicleId:
+          type: string
+          description: ID del vehículo asociado (opcional)
+        serviceId:
+          type: string
+          description: ID del servicio asociado (opcional)
+        receipt:
+          type: string
+          description: URL del recibo (opcional)
+      required:
+        - type
+        - category
+        - amount
+        - description
+        - date
+    
+    UpdateTransactionRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [income, expense]
+          description: Tipo de transacción
+        category:
+          type: string
+          description: Categoría de la transacción
+        amount:
+          type: number
+          minimum: 0
+          description: Monto de la transacción
+        description:
+          type: string
+          description: Descripción de la transacción
+        date:
+          type: string
+          format: date
+          description: Fecha de la transacción
+        propertyId:
+          type: string
+          description: ID de la propiedad asociada (opcional)
+        vehicleId:
+          type: string
+          description: ID del vehículo asociado (opcional)
+        serviceId:
+          type: string
+          description: ID del servicio asociado (opcional)
+        receipt:
+          type: string
+          description: URL del recibo (opcional)
+    
+    # Esquemas de Propiedades
+    Property:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID único de la propiedad
+        name:
+          type: string
+          description: Nombre de la propiedad
+        type:
+          type: string
+          enum: [home, villa, apartment, office, other]
+          description: Tipo de propiedad
+        address:
+          type: string
+          description: Dirección de la propiedad
+        value:
+          type: number
+          minimum: 0
+          description: Valor de la propiedad (opcional)
+        notes:
+          type: string
+          description: Notas adicionales (opcional)
+        userId:
+          type: string
+          description: ID del usuario propietario
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación
+      required:
+        - id
+        - name
+        - type
+        - address
+        - userId
+        - createdAt
+    
+    CreatePropertyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre de la propiedad
+        type:
+          type: string
+          enum: [home, villa, apartment, office, other]
+          description: Tipo de propiedad
+        address:
+          type: string
+          description: Dirección de la propiedad
+        value:
+          type: number
+          minimum: 0
+          description: Valor de la propiedad (opcional)
+        notes:
+          type: string
+          description: Notas adicionales (opcional)
+      required:
+        - name
+        - type
+        - address
+    
+    # Esquemas de Vehículos
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID único del vehículo
+        name:
+          type: string
+          description: Nombre del vehículo
+        brand:
+          type: string
+          description: Marca del vehículo
+        model:
+          type: string
+          description: Modelo del vehículo
+        year:
+          type: integer
+          minimum: 1900
+          maximum: 2030
+          description: Año del vehículo
+        plate:
+          type: string
+          description: Placa del vehículo
+        type:
+          type: string
+          enum: [car, motorcycle, truck, other]
+          description: Tipo de vehículo
+        notes:
+          type: string
+          description: Notas adicionales (opcional)
+        userId:
+          type: string
+          description: ID del usuario propietario
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación
+      required:
+        - id
+        - name
+        - brand
+        - model
+        - year
+        - plate
+        - type
+        - userId
+        - createdAt
+    
+    CreateVehicleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre del vehículo
+        brand:
+          type: string
+          description: Marca del vehículo
+        model:
+          type: string
+          description: Modelo del vehículo
+        year:
+          type: integer
+          minimum: 1900
+          maximum: 2030
+          description: Año del vehículo
+        plate:
+          type: string
+          description: Placa del vehículo
+        type:
+          type: string
+          enum: [car, motorcycle, truck, other]
+          description: Tipo de vehículo
+        notes:
+          type: string
+          description: Notas adicionales (opcional)
+      required:
+        - name
+        - brand
+        - model
+        - year
+        - plate
+        - type
+    
+    # Esquemas de Servicios
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID único del servicio
+        name:
+          type: string
+          description: Nombre del servicio
+        type:
+          type: string
+          enum: [subscription, utility, membership, insurance, other]
+          description: Tipo de servicio
+        amount:
+          type: number
+          minimum: 0
+          description: Monto del servicio
+        frequency:
+          type: string
+          enum: [monthly, quarterly, yearly]
+          description: Frecuencia de pago
+        nextPayment:
+          type: string
+          format: date
+          description: Fecha del próximo pago
+        isActive:
+          type: boolean
+          description: Si el servicio está activo
+        propertyId:
+          type: string
+          description: ID de la propiedad asociada (opcional)
+        vehicleId:
+          type: string
+          description: ID del vehículo asociado (opcional)
+        notes:
+          type: string
+          description: Notas adicionales (opcional)
+        userId:
+          type: string
+          description: ID del usuario propietario
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación
+      required:
+        - id
+        - name
         - type
         - amount
+        - frequency
+        - nextPayment
+        - isActive
+        - userId
+        - createdAt
+    
+    CreateServiceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre del servicio
+        type:
+          type: string
+          enum: [subscription, utility, membership, insurance, other]
+          description: Tipo de servicio
+        amount:
+          type: number
+          minimum: 0
+          description: Monto del servicio
+        frequency:
+          type: string
+          enum: [monthly, quarterly, yearly]
+          description: Frecuencia de pago
+        nextPayment:
+          type: string
+          format: date
+          description: Fecha del próximo pago
+        isActive:
+          type: boolean
+          default: true
+          description: Si el servicio está activo
+        propertyId:
+          type: string
+          description: ID de la propiedad asociada (opcional)
+        vehicleId:
+          type: string
+          description: ID del vehículo asociado (opcional)
+        notes:
+          type: string
+          description: Notas adicionales (opcional)
+      required:
+        - name
+        - type
+        - amount
+        - frequency
+        - nextPayment
+    
+    UpcomingPayment:
+      allOf:
+        - $ref: '#/components/schemas/Service'
+        - type: object
+          properties:
+            daysUntilPayment:
+              type: integer
+              description: Días hasta el próximo pago
+          required:
+            - daysUntilPayment
+    
+    # Esquemas de Reportes
+    FinancialSummary:
+      type: object
+      properties:
+        period:
+          type: string
+          enum: [weekly, monthly, quarterly, yearly]
+          description: Período del resumen
+        totalIncome:
+          type: number
+          description: Total de ingresos
+        totalExpenses:
+          type: number
+          description: Total de gastos
+        netIncome:
+          type: number
+          description: Ingreso neto
+        transactionCount:
+          type: integer
+          description: Número de transacciones
+        categoryBreakdown:
+          type: object
+          additionalProperties:
+            type: number
+          description: Desglose por categoría
+        monthlyTrend:
+          type: array
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+                format: date
+              income:
+                type: number
+              expenses:
+                type: number
+              net:
+                type: number
+      required:
+        - period
+        - totalIncome
+        - totalExpenses
+        - netIncome
+        - transactionCount
+        - categoryBreakdown
+    
+    # Esquemas de Utilidad
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total de elementos
+        limit:
+          type: integer
+          description: Límite por página
+        offset:
+          type: integer
+          description: Elementos omitidos
+        hasNext:
+          type: boolean
+          description: Si hay más páginas
+      required:
+        - total
+        - limit
+        - offset
+        - hasNext
+    
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Mensaje de error
+        code:
+          type: string
+          description: Código de error (opcional)
+        details:
+          type: object
+          description: Detalles adicionales del error (opcional)
+      required:
+        - error
+    
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Mensaje de respuesta
+      required:
+        - message
+    
+    # Esquemas antiguos (para compatibilidad)
     NewTransaction:
       type: object
       properties:
