@@ -1,8 +1,18 @@
-FinnanceApp
+# FinnanceApp
+
+[![CI/CD Pipeline](https://github.com/atomic0supply/finnance/actions/workflows/ci.yml/badge.svg)](https://github.com/atomic0supply/finnance/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Personal Finance App built with shadcn/ui to help you manage and track all your personal expenses, bills, properties, vehicles, and payment schedules in one place.
 
-🚀 Features
+## 🌳 Estructura del Proyecto
+
+- **`main`**: Rama de producción estable
+- **`dev`**: Rama de desarrollo activo
+
+Ver [BRANCHING.md](BRANCHING.md) para más detalles sobre el flujo de trabajo.
+
+## 🚀 Features
 
 Service Tracking: Add and monitor recurring services (billed monthly or annually), such as subscriptions, utilities, and memberships.
 
