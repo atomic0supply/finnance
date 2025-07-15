@@ -97,3 +97,14 @@ Los workflows incluyen:
 - Linting
 - Build del proyecto
 - Deploy automático (solo en `main`)
+
+### 🧹 Limpieza del Repositorio
+
+Si encuentras ramas obsoletas o PRs innecesarios, consulta `CLEANUP_GITHUB.md` para instrucciones de limpieza.
+
+### 📱 Estado Actual del Repositorio
+
+- **Rama por defecto**: `main`
+- **Rama de desarrollo**: `dev`
+- **Estructura limpia**: Solo ramas principales activas
+- **CI/CD**: Configurado y funcionando
