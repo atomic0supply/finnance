@@ -15,11 +15,23 @@ case "$1" in
       echo "No running server."
     fi
     ;;
+  status)
+    if [ -f web.pid ]; then
+      PID=$(cat web.pid)
+      if ps -p $PID > /dev/null; then
+        echo "Server running with PID $PID"
+      else
+        echo "Stale PID file found."
+      fi
+    else
+      echo "Server not running."
+    fi
+    ;;
   reset)
     $0 stop
     $0 start
     ;;
   *)
-    echo "Usage: $0 {start|stop|reset}"
+    echo "Usage: $0 {start|stop|reset|status}"
     ;;
 esac
