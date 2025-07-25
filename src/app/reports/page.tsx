@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Spinner from '@/components/Spinner';
 import { useToast } from '@/components/ToastProvider';
+import type { Transaction } from '@/stores/useFinanceStore';
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,7 @@ export default function ReportsPage() {
       const data = await res.json();
       const header = 'date,description,amount\n';
       const rows = data
-        .map((t: any) => `${t.date},${t.description.replace(/,/g, ';')},${t.amount}`)
+        .map((t: Transaction) => `${t.date},${t.description.replace(/,/g, ';')},${t.amount}`)
         .join('\n');
       const blob = new Blob([header + rows], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);

@@ -27,7 +27,7 @@ export function generateTokens(user: User): TokenPair {
     expiresIn: JWT_EXPIRES_IN,
     issuer: 'finnance-app',
     audience: 'finnance-users'
-  });
+  } as jwt.SignOptions);
 
   const refreshToken = jwt.sign(
     { userId: user.id, email: user.email },
@@ -36,7 +36,7 @@ export function generateTokens(user: User): TokenPair {
       expiresIn: JWT_REFRESH_EXPIRES_IN,
       issuer: 'finnance-app',
       audience: 'finnance-users'
-    }
+    } as jwt.SignOptions
   );
 
   // Calculate expiration time

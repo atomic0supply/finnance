@@ -276,7 +276,8 @@ export const useFinanceStore = create<FinanceState>()(
         const { transactions, addTransaction } = get();
         const transaction = transactions.find((t) => t.id === id);
         if (transaction) {
-          const { id: _, userId: __, createdAt: ___, updatedAt: ____, ...transactionData } = transaction;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id: _id, userId: _userId, createdAt: _createdAt, updatedAt: _updatedAt, ...transactionData } = transaction;
           await addTransaction({
             ...transactionData,
             description: `${transactionData.description} (Copy)`,

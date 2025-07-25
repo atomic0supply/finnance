@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useFinanceStore } from "@/stores/useFinanceStore";
+import { useFinanceStore, Vehicle } from "@/stores/useFinanceStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,14 +15,14 @@ import { toast } from "sonner";
 export default function VehiclesPage() {
   const { vehicles, addVehicle, updateVehicle, deleteVehicle, getTransactionsByVehicle } = useFinanceStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState<any>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     brand: "",
     model: "",
     year: "",
     plate: "",
-    type: "car" as const,
+    type: "car" as "car" | "motorcycle" | "truck" | "other",
     notes: ""
   });
 
@@ -50,7 +50,8 @@ export default function VehiclesPage() {
 
     const vehicleData = {
       ...formData,
-      year: parseInt(formData.year)
+      year: parseInt(formData.year) || new Date().getFullYear(),
+      notes: formData.notes || undefined
     };
 
     if (editingVehicle) {
@@ -74,7 +75,7 @@ export default function VehiclesPage() {
     });
   };
 
-  const handleEdit = (vehicle: any) => {
+  const handleEdit = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
     setFormData({
       name: vehicle?.name || "",
@@ -186,7 +187,7 @@ export default function VehiclesPage() {
               
               <div>
                 <Label htmlFor="type">Tipo</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}>
+                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as "car" | "motorcycle" | "truck" | "other" }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

@@ -14,11 +14,11 @@ import {
   ChevronDown
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const navigationItems = [
@@ -84,12 +84,16 @@ export function AppSidebar() {
               <DropdownMenuTrigger className="w-full">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
                       {user.imageUrl ? (
-                        <img 
+                        <Image 
                           src={user.imageUrl} 
                           alt={user.fullName || 'User'} 
-                          className="w-8 h-8 rounded-full"
+                          width={32}
+                          height={32}
+                          className="rounded-full object-cover"
+                          priority={false}
+                          unoptimized={false}
                         />
                       ) : (
                         <User className="h-4 w-4 text-blue-600" />

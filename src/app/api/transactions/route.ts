@@ -41,7 +41,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = TransactionQuerySchema.parse(Object.fromEntries(searchParams));
 
-    const where: any = {
+    const where: {
+      userId: string;
+      type?: string;
+      category?: string;
+      date?: {
+        gte?: Date;
+        lte?: Date;
+      };
+      propertyId?: string;
+      vehicleId?: string;
+      serviceId?: string;
+      OR?: Array<{
+        description?: { contains: string; mode: 'insensitive' };
+        notes?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
       userId: user.id,
     };
 

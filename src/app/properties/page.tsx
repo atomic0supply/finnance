@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useFinanceStore } from "@/stores/useFinanceStore";
+import { useFinanceStore, Property } from "@/stores/useFinanceStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,10 +15,10 @@ import { toast } from "sonner";
 export default function PropertiesPage() {
   const { properties, addProperty, updateProperty, deleteProperty, getTransactionsByProperty } = useFinanceStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<any>(null);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    type: "home" as const,
+    type: "home" as "home" | "villa" | "apartment" | "office" | "other",
     address: "",
     value: "",
     notes: ""
@@ -72,7 +72,7 @@ export default function PropertiesPage() {
     });
   };
 
-  const handleEdit = (property: any) => {
+  const handleEdit = (property: Property) => {
     setEditingProperty(property);
     setFormData({
       name: property?.name || "",
@@ -133,7 +133,7 @@ export default function PropertiesPage() {
               
               <div>
                 <Label htmlFor="type">Tipo</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}>
+                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as "home" | "villa" | "apartment" | "office" | "other" }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

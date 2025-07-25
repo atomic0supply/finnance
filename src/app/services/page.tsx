@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useFinanceStore } from "@/stores/useFinanceStore";
+import { useFinanceStore, Service } from "@/stores/useFinanceStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,12 +15,12 @@ import { toast } from "sonner";
 export default function ServicesPage() {
   const { services, addService, updateService, deleteService, toggleServiceStatus, properties, vehicles } = useFinanceStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingService, setEditingService] = useState<any>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    type: "subscription" as const,
+    type: "subscription" as "subscription" | "utility" | "membership" | "insurance" | "other",
     amount: "",
-    frequency: "monthly" as const,
+    frequency: "monthly" as "monthly" | "quarterly" | "yearly",
     nextPayment: "",
     propertyId: "",
     vehicleId: "",
@@ -62,6 +62,7 @@ export default function ServicesPage() {
       amount: parseFloat(formData.amount),
       propertyId: formData.propertyId || undefined,
       vehicleId: formData.vehicleId || undefined,
+      notes: formData.notes || undefined,
       isActive: true
     };
 
@@ -87,7 +88,7 @@ export default function ServicesPage() {
     });
   };
 
-  const handleEdit = (service: any) => {
+  const handleEdit = (service: Service) => {
     setEditingService(service);
     setFormData({
       name: service?.name || "",
@@ -122,7 +123,7 @@ export default function ServicesPage() {
     return diffDays;
   };
 
-  const getAssociatedName = (service: any) => {
+  const getAssociatedName = (service: Service) => {
     if (service?.propertyId) {
       const property = (properties || []).find(p => p?.id === service.propertyId);
       return property ? `📍 ${property.name}` : "";
@@ -170,7 +171,7 @@ export default function ServicesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="type">Tipo</Label>
-                  <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}>
+                  <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as "subscription" | "utility" | "membership" | "insurance" | "other" }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -186,7 +187,7 @@ export default function ServicesPage() {
                 
                 <div>
                   <Label htmlFor="frequency">Frecuencia</Label>
-                  <Select value={formData.frequency} onValueChange={(value) => setFormData(prev => ({ ...prev, frequency: value as any }))}>
+                  <Select value={formData.frequency} onValueChange={(value) => setFormData(prev => ({ ...prev, frequency: value as "monthly" | "quarterly" | "yearly" }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -228,12 +229,12 @@ export default function ServicesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="propertyId">Propiedad (opcional)</Label>
-                  <Select value={formData.propertyId} onValueChange={(value) => setFormData(prev => ({ ...prev, propertyId: value, vehicleId: "" }))}>
+                  <Select value={formData.propertyId || "none"} onValueChange={(value) => setFormData(prev => ({ ...prev, propertyId: value === "none" ? "" : value, vehicleId: "" }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar propiedad" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Ninguna</SelectItem>
+                      <SelectItem value="none">Ninguna</SelectItem>
                       {(properties || []).map((property) => (
                         <SelectItem key={property.id} value={property.id}>
                           {property.name}
@@ -245,12 +246,12 @@ export default function ServicesPage() {
                 
                 <div>
                   <Label htmlFor="vehicleId">Vehículo (opcional)</Label>
-                  <Select value={formData.vehicleId} onValueChange={(value) => setFormData(prev => ({ ...prev, vehicleId: value, propertyId: "" }))}>
+                  <Select value={formData.vehicleId || "none"} onValueChange={(value) => setFormData(prev => ({ ...prev, vehicleId: value === "none" ? "" : value, propertyId: "" }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar vehículo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Ninguno</SelectItem>
+                      <SelectItem value="none">Ninguno</SelectItem>
                       {(vehicles || []).map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>
                           {vehicle.name}

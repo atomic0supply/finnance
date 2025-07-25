@@ -10,6 +10,12 @@ export interface AuthUser {
   role: string;
 }
 
+export interface JWTPayload {
+  userId: string;
+  iat?: number;
+  exp?: number;
+}
+
 export async function getCurrentUser(request: NextRequest): Promise<AuthUser | null> {
   try {
     const authHeader = request.headers.get('authorization');
@@ -25,7 +31,7 @@ export async function getCurrentUser(request: NextRequest): Promise<AuthUser | n
       throw new Error('JWT_SECRET not configured');
     }
 
-    const decoded = jwt.verify(token, jwtSecret) as any;
+    const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
     
     if (!decoded.userId) {
       return null;
@@ -39,13 +45,27 @@ export async function getCurrentUser(request: NextRequest): Promise<AuthUser | n
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        name: true,
         role: true
       }
     });
 
-    return user;
+    if (!user) {
+      return null;
+    }
+
+    // Split name into firstName and lastName for compatibility
+    const nameParts = user.name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName,
+      lastName,
+      role: user.role
+    };
   } catch (error) {
     console.error('Auth error:', error);
     return null;
@@ -62,7 +82,7 @@ export function generateToken(userId: string): string {
   return jwt.sign(
     { userId },
     jwtSecret,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as jwt.SignOptions
   );
 }
 
@@ -76,7 +96,7 @@ export function generateRefreshToken(userId: string): string {
   return jwt.sign(
     { userId },
     jwtRefreshSecret,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' } as jwt.SignOptions
   );
 }
 

@@ -125,7 +125,7 @@ export function hasPermission(
   return userPermissions.some(
     permission => 
       permission.resource === resource && 
-      permission.actions.includes(action as any)
+      permission.actions.includes(action as 'create' | 'read' | 'update' | 'delete' | 'export')
   );
 }
 

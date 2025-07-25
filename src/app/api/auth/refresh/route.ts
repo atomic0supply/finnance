@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user
-    const user = getUserById(decoded.userId);
+    const user = await getUserById(decoded.userId);
     if (!user || !user.isActive) {
       return NextResponse.json(
         { error: 'User not found or inactive' },

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AuthState, User, RegisterData, LoginResponse } from '@/types/auth';
+import { User, LoginResponse, AuthState, RegisterData } from '@/types/auth';
 import { hasPermission, canAccessRoute } from '@/config/roles';
+import { DEFAULT_PERMISSIONS } from '@/config/roles';
 
 interface AuthStore extends AuthState {
   // Additional state
@@ -271,8 +272,8 @@ export const useAuthStore = create<AuthStore>()(
         if (user.role === 'admin') return true;
 
         // Get permissions from role configuration
-        const rolePermissions = get().user?.role ? 
-          require('@/config/roles').DEFAULT_PERMISSIONS[user.role] || [] : [];
+        const rolePermissions = user.role ? 
+          DEFAULT_PERMISSIONS[user.role] || [] : [];
 
         return hasPermission(rolePermissions, resource, action);
       },

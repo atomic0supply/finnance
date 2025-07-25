@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { verifyToken } from './jwt';
 import { prisma } from './prisma';
-import { JWTPayload, User } from '@/types/auth';
-import { hasPermission } from '@/config/roles';
+import { JWTPayload, User, UserPreferences } from '@/types/auth';
 
 export interface AuthResult {
   user: User;
@@ -11,8 +10,7 @@ export interface AuthResult {
 }
 
 export function requireAuth(
-  request: NextRequest,
-  allowedRoles?: string[]
+  request: NextRequest
 ): NextResponse | AuthResult {
   const header = request.headers.get('authorization') || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
@@ -32,30 +30,22 @@ export function requireAuth(
     );
   }
 
-  // Note: This function is synchronous but getUserById is now async
-  // This will need to be refactored to be async in the calling code
-  const user = getUserByIdSync(payload.userId);
-  if (!user || !user.isActive) {
-    return NextResponse.json(
-      { error: 'User not found or inactive' },
-      { status: 401 }
-    );
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return NextResponse.json(
-      { error: 'Insufficient permissions' },
-      { status: 403 }
-    );
-  }
-
-  return { user, payload };
+  // Note: This function is temporarily disabled during Clerk migration
+  // TODO: Refactor to async or remove when Clerk migration is complete
+  
+  // Temporary return for Clerk migration
+  return NextResponse.json(
+    { error: 'Auth function disabled during Clerk migration' },
+    { status: 501 }
+  );
 }
 
 export function requirePermission(
   request: NextRequest,
-  resource: string,
-  action: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _resource: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _action: string
 ): NextResponse | AuthResult {
   const authResult = requireAuth(request);
   
@@ -63,16 +53,13 @@ export function requirePermission(
     return authResult;
   }
 
-  const { user, payload } = authResult;
+  // Note: This function is temporarily disabled during Clerk migration
+  // TODO: Refactor when Clerk migration is complete
   
-  if (!hasPermission(payload.permissions, resource, action)) {
-    return NextResponse.json(
-      { error: `Permission denied for ${action} on ${resource}` },
-      { status: 403 }
-    );
-  }
-
-  return authResult;
+  return NextResponse.json(
+    { error: 'Permission check disabled during Clerk migration' },
+    { status: 501 }
+  );
 }
 
 export async function authenticateUser(
@@ -111,7 +98,7 @@ export async function authenticateUser(
       createdAt: user.createdAt.toISOString(),
       lastLogin: new Date().toISOString(),
       isActive: user.isActive,
-      preferences: user.preferences as any || {
+      preferences: (user.preferences as UserPreferences) || {
         language: 'es',
         currency: 'USD',
         theme: 'light',
@@ -138,7 +125,7 @@ export async function createUser(
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    const defaultPreferences = {
+    const defaultPreferences: UserPreferences = {
       language: 'es',
       currency: 'USD',
       theme: 'light',
@@ -169,7 +156,7 @@ export async function createUser(
       createdAt: newUser.createdAt.toISOString(),
       lastLogin: newUser.lastLogin?.toISOString(),
       isActive: newUser.isActive,
-      preferences: newUser.preferences as any || defaultPreferences
+      preferences: (newUser.preferences as UserPreferences) || defaultPreferences
     };
   } catch (error) {
     console.error('Create user error:', error);
@@ -187,6 +174,18 @@ export async function getUserById(id: string): Promise<User | null> {
       return null;
     }
 
+    const defaultPreferences: UserPreferences = {
+      language: 'es',
+      currency: 'USD',
+      theme: 'light',
+      notifications: {
+        email: true,
+        push: false,
+        upcomingPayments: true,
+        budgetAlerts: true
+      }
+    };
+
     return {
       id: user.id,
       email: user.email,
@@ -195,30 +194,12 @@ export async function getUserById(id: string): Promise<User | null> {
       createdAt: user.createdAt.toISOString(),
       lastLogin: user.lastLogin?.toISOString(),
       isActive: user.isActive,
-      preferences: user.preferences as any || {
-        language: 'es',
-        currency: 'USD',
-        theme: 'light',
-        notifications: {
-          email: true,
-          push: false,
-          upcomingPayments: true,
-          budgetAlerts: true
-        }
-      }
+      preferences: (user.preferences as UserPreferences) || defaultPreferences
     };
   } catch (error) {
     console.error('Get user by ID error:', error);
     return null;
   }
-}
-
-// Temporary sync function for backward compatibility
-// This should be removed once all calling code is updated to async
-function getUserByIdSync(id: string): User | null {
-  // This is a temporary workaround - in production, all auth should be async
-  console.warn('Using synchronous getUserByIdSync - this should be migrated to async');
-  return null;
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
@@ -231,6 +212,18 @@ export async function getUserByEmail(email: string): Promise<User | null> {
       return null;
     }
 
+    const defaultPreferences: UserPreferences = {
+      language: 'es',
+      currency: 'USD',
+      theme: 'light',
+      notifications: {
+        email: true,
+        push: false,
+        upcomingPayments: true,
+        budgetAlerts: true
+      }
+    };
+
     return {
       id: user.id,
       email: user.email,
@@ -239,17 +232,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
       createdAt: user.createdAt.toISOString(),
       lastLogin: user.lastLogin?.toISOString(),
       isActive: user.isActive,
-      preferences: user.preferences as any || {
-        language: 'es',
-        currency: 'USD',
-        theme: 'light',
-        notifications: {
-          email: true,
-          push: false,
-          upcomingPayments: true,
-          budgetAlerts: true
-        }
-      }
+      preferences: (user.preferences as UserPreferences) || defaultPreferences
     };
   } catch (error) {
     console.error('Get user by email error:', error);
@@ -285,7 +268,7 @@ export async function updateUserProfile(
       where: { id },
       data: {
         ...(data.name && { name: data.name }),
-        ...(data.preferences && { preferences: data.preferences })
+        ...(data.preferences && { preferences: data.preferences as UserPreferences })
       }
     });
 
@@ -297,7 +280,7 @@ export async function updateUserProfile(
       createdAt: updatedUser.createdAt.toISOString(),
       lastLogin: updatedUser.lastLogin?.toISOString(),
       isActive: updatedUser.isActive,
-      preferences: updatedUser.preferences as any
+      preferences: updatedUser.preferences as UserPreferences
     };
   } catch (error) {
     console.error('Update user profile error:', error);

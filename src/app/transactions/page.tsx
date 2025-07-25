@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useFinanceStore } from "@/stores/useFinanceStore";
+import type { Transaction } from "@/stores/useFinanceStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,13 +16,12 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Copy, 
-  TrendingUp, 
+  Copy,
+  TrendingUp,
   TrendingDown,
   Building,
   Car,
-  Download,
-  Upload
+  Download
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,9 +37,9 @@ export default function TransactionsPage() {
   } = useFinanceStore();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [formData, setFormData] = useState({
-    type: "expense" as const,
+    type: "expense" as "income" | "expense",
     category: "",
     amount: "",
     description: "",
@@ -104,7 +104,7 @@ export default function TransactionsPage() {
     });
   };
 
-  const handleEdit = (transaction: any) => {
+  const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setFormData({
       type: transaction?.type || "expense",
@@ -131,7 +131,7 @@ export default function TransactionsPage() {
     toast.success("Transacción duplicada exitosamente");
   };
 
-  const getAssociatedName = (transaction: any) => {
+  const getAssociatedName = (transaction: Transaction) => {
     if (transaction?.propertyId) {
       const property = (properties || []).find(p => p?.id === transaction.propertyId);
       return property ? { name: property.name, icon: Building } : null;
@@ -189,7 +189,7 @@ export default function TransactionsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="type">Tipo *</Label>
-                      <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}>
+                      <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as "income" | "expense" }))}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -259,12 +259,12 @@ export default function TransactionsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="propertyId">Propiedad (opcional)</Label>
-                      <Select value={formData.propertyId} onValueChange={(value) => setFormData(prev => ({ ...prev, propertyId: value, vehicleId: "" }))}>
+                      <Select value={formData.propertyId || "none"} onValueChange={(value) => setFormData(prev => ({ ...prev, propertyId: value === "none" ? "" : value, vehicleId: "" }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar propiedad" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Ninguna</SelectItem>
+                          <SelectItem value="none">Ninguna</SelectItem>
                           {Array.isArray(properties) && properties.map((property) => (
                             property?.id && property?.name ? (
                               <SelectItem key={property.id} value={property.id}>
@@ -278,12 +278,12 @@ export default function TransactionsPage() {
                     
                     <div>
                       <Label htmlFor="vehicleId">Vehículo (opcional)</Label>
-                      <Select value={formData.vehicleId} onValueChange={(value) => setFormData(prev => ({ ...prev, vehicleId: value, propertyId: "" }))}>
+                      <Select value={formData.vehicleId || "none"} onValueChange={(value) => setFormData(prev => ({ ...prev, vehicleId: value === "none" ? "" : value, propertyId: "" }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar vehículo" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Ninguno</SelectItem>
+                          <SelectItem value="none">Ninguno</SelectItem>
                           {Array.isArray(vehicles) && vehicles.map((vehicle) => (
                             vehicle?.id && vehicle?.name ? (
                               <SelectItem key={vehicle.id} value={vehicle.id}>

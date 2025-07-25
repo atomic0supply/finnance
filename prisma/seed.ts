@@ -1,6 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+interface UserPreferences {
+  language: 'es' | 'en';
+  currency: 'USD' | 'EUR' | 'MXN';
+  theme: 'light' | 'dark' | 'auto';
+  notifications: {
+    email: boolean;
+    push: boolean;
+    upcomingPayments: boolean;
+    budgetAlerts: boolean;
+  };
+}
+
 const prisma = new PrismaClient();
 
 async function main() {
@@ -10,7 +22,7 @@ async function main() {
   const adminPassword = await bcrypt.hash('admin123', 10);
   const userPassword = await bcrypt.hash('user123', 10);
 
-  const defaultPreferences = {
+  const defaultPreferences: UserPreferences = {
     language: 'es',
     currency: 'USD',
     theme: 'light',
@@ -22,33 +34,33 @@ async function main() {
     }
   };
 
-  const adminPreferences = {
+  const adminPreferences: UserPreferences = {
     ...defaultPreferences,
+    theme: 'dark',
     notifications: {
       ...defaultPreferences.notifications,
       push: true
     }
   };
 
-  // Crear usuario administrador
-  const admin = await prisma.user.upsert({
+  // Create admin user
+  const adminUser = await prisma.user.upsert({
     where: { email: 'admin@finnance.com' },
     update: {},
     create: {
       email: 'admin@finnance.com',
-      name: 'Admin User',
+      name: 'Administrator',
       role: 'admin',
       passwordHash: adminPassword,
       isActive: true,
-      preferences: adminPreferences,
-      lastLogin: new Date()
+      preferences: adminPreferences
     }
   });
 
-  console.log('✅ Usuario administrador creado:', admin.email);
+  console.log('✅ Usuario administrador creado:', adminUser.email);
 
-  // Crear usuario regular
-  const user = await prisma.user.upsert({
+  // Create regular user
+  const regularUser = await prisma.user.upsert({
     where: { email: 'user@finnance.com' },
     update: {},
     create: {
@@ -57,12 +69,11 @@ async function main() {
       role: 'user',
       passwordHash: userPassword,
       isActive: true,
-      preferences: defaultPreferences,
-      lastLogin: new Date()
+      preferences: defaultPreferences
     }
   });
 
-  console.log('✅ Usuario regular creado:', user.email);
+  console.log('✅ Usuario regular creado:', regularUser.email);
 
   // Crear algunas propiedades de ejemplo
   const property1 = await prisma.property.create({
@@ -70,9 +81,8 @@ async function main() {
       name: 'Casa Principal',
       type: 'house',
       address: 'Calle Principal 123',
-      purchasePrice: 250000,
-      currentValue: 280000,
-      userId: user.id
+      value: 280000,
+      userId: regularUser.id
     }
   });
 
@@ -81,9 +91,8 @@ async function main() {
       name: 'Apartamento Centro',
       type: 'apartment',
       address: 'Avenida Central 456',
-      purchasePrice: 150000,
-      currentValue: 165000,
-      userId: user.id
+      value: 165000,
+      userId: regularUser.id
     }
   });
 
@@ -96,9 +105,9 @@ async function main() {
       brand: 'Toyota',
       model: 'Corolla',
       year: 2020,
-      purchasePrice: 25000,
-      currentValue: 22000,
-      userId: user.id
+      plate: 'ABC-123',
+      type: 'car',
+      userId: regularUser.id
     }
   });
 
@@ -108,9 +117,9 @@ async function main() {
       brand: 'Honda',
       model: 'Civic',
       year: 2019,
-      purchasePrice: 23000,
-      currentValue: 20000,
-      userId: user.id
+      plate: 'XYZ-789',
+      type: 'car',
+      userId: regularUser.id
     }
   });
 
@@ -120,30 +129,36 @@ async function main() {
   const service1 = await prisma.service.create({
     data: {
       name: 'Netflix',
-      category: 'entertainment',
-      monthlyPrice: 15.99,
+      type: 'subscription',
+      amount: 15.99,
+      frequency: 'monthly',
+      nextPayment: new Date('2024-02-01'),
       isActive: true,
-      userId: user.id
+      userId: regularUser.id
     }
   });
 
   const service2 = await prisma.service.create({
     data: {
       name: 'Spotify',
-      category: 'entertainment',
-      monthlyPrice: 9.99,
+      type: 'subscription',
+      amount: 9.99,
+      frequency: 'monthly',
+      nextPayment: new Date('2024-02-01'),
       isActive: true,
-      userId: user.id
+      userId: regularUser.id
     }
   });
 
   const service3 = await prisma.service.create({
     data: {
       name: 'Seguro Auto',
-      category: 'insurance',
-      monthlyPrice: 120.00,
+      type: 'insurance',
+      amount: 120.00,
+      frequency: 'monthly',
+      nextPayment: new Date('2024-02-01'),
       isActive: true,
-      userId: user.id
+      userId: regularUser.id
     }
   });
 
@@ -157,7 +172,7 @@ async function main() {
       type: 'income' as const,
       amount: 3500,
       date: new Date('2024-01-15'),
-      userId: user.id
+      userId: regularUser.id
     },
     {
       description: 'Supermercado',
@@ -165,7 +180,7 @@ async function main() {
       type: 'expense' as const,
       amount: 150,
       date: new Date('2024-01-16'),
-      userId: user.id
+      userId: regularUser.id
     },
     {
       description: 'Gasolina',
@@ -174,7 +189,7 @@ async function main() {
       amount: 60,
       date: new Date('2024-01-17'),
       vehicleId: vehicle1.id,
-      userId: user.id
+      userId: regularUser.id
     },
     {
       description: 'Pago Netflix',
@@ -183,7 +198,7 @@ async function main() {
       amount: 15.99,
       date: new Date('2024-01-18'),
       serviceId: service1.id,
-      userId: user.id
+      userId: regularUser.id
     },
     {
       description: 'Mantenimiento casa',
@@ -192,7 +207,7 @@ async function main() {
       amount: 200,
       date: new Date('2024-01-19'),
       propertyId: property1.id,
-      userId: user.id
+      userId: regularUser.id
     }
   ];
 

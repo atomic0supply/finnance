@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useFinanceStore } from "@/stores/useFinanceStore";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";

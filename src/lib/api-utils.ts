@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { ZodError } from 'zod';
+import { NextResponse } from 'next/server';
+import { ZodError, ZodIssue } from 'zod';
 
 export interface ApiError {
   error: string;
   code?: string;
-  details?: any;
+  details?: unknown;
+}
+
+interface PrismaError {
+  code: string;
+  message: string;
 }
 
 export function handleApiError(error: unknown): NextResponse<ApiError> {
@@ -16,7 +21,7 @@ export function handleApiError(error: unknown): NextResponse<ApiError> {
       {
         error: 'Datos de entrada inválidos',
         code: 'VALIDATION_ERROR',
-        details: error.issues.map((err: any) => ({
+        details: error.issues.map((err: ZodIssue) => ({
           field: err.path.join('.'),
           message: err.message
         }))
@@ -27,7 +32,7 @@ export function handleApiError(error: unknown): NextResponse<ApiError> {
 
   // Prisma errors
   if (error && typeof error === 'object' && 'code' in error) {
-    const prismaError = error as any;
+    const prismaError = error as PrismaError;
     
     switch (prismaError.code) {
       case 'P2002':
