@@ -1,71 +1,166 @@
-import { NextRequest, NextResponse } from 'next/server'
-import transactions, { type Transaction } from '@/data/transactions'
-import { requireAuth, requirePermission } from '@/lib/auth'
-import { sanitizeString } from '@/lib/sanitize'
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/prisma';
+import { handleApiError, createSuccessResponse } from '@/lib/api-utils';
+import { CreateTransactionSchema, TransactionQuerySchema } from '@/lib/validations';
 
-export const revalidate = 60
+export const revalidate = 60;
+
+async function getUserFromClerk(clerkUserId: string) {
+  let user = await prisma.user.findUnique({
+    where: { clerkId: clerkUserId }
+  });
+
+  if (!user) {
+    // Create user if doesn't exist (first time login)
+    user = await prisma.user.create({
+      data: {
+        clerkId: clerkUserId,
+        email: '', // Will be updated from Clerk webhook
+        name: '', // Will be updated from Clerk webhook
+      }
+    });
+  }
+
+  return user;
+}
 
 export async function GET(request: NextRequest) {
-  const authResult = requirePermission(request, 'transactions', 'read')
-  if (authResult instanceof NextResponse) return authResult
-
-  const { user } = authResult
-  
-  // Filter transactions by user
-  const userTransactions = transactions.filter(t => t.userId === user.id)
-
-  return NextResponse.json(userTransactions, {
-    headers: {
-      'Cache-Control': 'public, max-age=60, stale-while-revalidate=120'
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
-  })
+
+    const user = await getUserFromClerk(userId);
+
+    const { searchParams } = new URL(request.url);
+    const query = TransactionQuerySchema.parse(Object.fromEntries(searchParams));
+
+    const where: any = {
+      userId: user.id,
+    };
+
+    // Apply filters
+    if (query.type) {
+      where.type = query.type;
+    }
+
+    if (query.category) {
+      where.category = query.category;
+    }
+
+    if (query.startDate || query.endDate) {
+      where.date = {};
+      if (query.startDate) {
+        where.date.gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        where.date.lte = new Date(query.endDate);
+      }
+    }
+
+    if (query.propertyId) {
+      where.propertyId = query.propertyId;
+    }
+
+    if (query.vehicleId) {
+      where.vehicleId = query.vehicleId;
+    }
+
+    if (query.serviceId) {
+      where.serviceId = query.serviceId;
+    }
+
+    if (query.search) {
+      where.OR = [
+        { description: { contains: query.search, mode: 'insensitive' } },
+        { notes: { contains: query.search, mode: 'insensitive' } }
+      ];
+    }
+
+    // Pagination
+    const skip = (query.page - 1) * query.limit;
+
+    // Execute queries in parallel
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: {
+          property: {
+            select: { id: true, name: true, type: true }
+          },
+          vehicle: {
+            select: { id: true, name: true, brand: true, model: true }
+          },
+          service: {
+            select: { id: true, name: true, type: true }
+          }
+        },
+        orderBy: { date: 'desc' },
+        skip,
+        take: query.limit
+      }),
+      prisma.transaction.count({ where })
+    ]);
+
+    const response = {
+      transactions,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        pages: Math.ceil(total / query.limit)
+      }
+    };
+
+    return createSuccessResponse(response);
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = requirePermission(request, 'transactions', 'create')
-  if (authResult instanceof NextResponse) return authResult
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-  const { user } = authResult
+    const user = await getUserFromClerk(userId);
 
-  const body = await request.json().catch(() => null)
-  if (!body)
-    return NextResponse.json(
-      { error: 'Invalid JSON' },
-      { status: 400 }
-    )
+    const body = await request.json();
+    const data = CreateTransactionSchema.parse(body);
 
-  const { date, description, category, type, amount, propertyId, vehicleId, serviceId, receipt } = body as Record<string, unknown>
+    const transaction = await prisma.transaction.create({
+      data: {
+        ...data,
+        userId: user.id,
+        date: new Date(data.date)
+      },
+      include: {
+        property: {
+          select: { id: true, name: true, type: true }
+        },
+        vehicle: {
+          select: { id: true, name: true, brand: true, model: true }
+        },
+        service: {
+          select: { id: true, name: true, type: true }
+        }
+      }
+    });
 
-  if (
-    typeof date !== 'string' ||
-    typeof description !== 'string' ||
-    typeof category !== 'string' ||
-    (type !== 'income' && type !== 'expense') ||
-    typeof amount !== 'number'
-  ) {
-    return NextResponse.json(
-      { error: 'Invalid transaction data' },
-      { status: 400 }
-    )
+    return createSuccessResponse(transaction, 201);
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  const newTx: Transaction = {
-    id: (transactions.length + 1).toString(),
-    date: sanitizeString(date),
-    description: sanitizeString(description),
-    category: sanitizeString(category),
-    type,
-    amount,
-    propertyId: propertyId ? sanitizeString(propertyId as string) : undefined,
-    vehicleId: vehicleId ? sanitizeString(vehicleId as string) : undefined,
-    serviceId: serviceId ? sanitizeString(serviceId as string) : undefined,
-    receipt: receipt ? sanitizeString(receipt as string) : undefined,
-    userId: user.id,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-
-  transactions.push(newTx)
-
-  return NextResponse.json(newTx, { status: 201 })
 }

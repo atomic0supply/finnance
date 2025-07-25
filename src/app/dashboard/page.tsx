@@ -31,17 +31,17 @@ export default function DashboardPage() {
   const dueSoonPayments = upcomingPayments.filter(s => s.daysUntilPayment >= 0 && s.daysUntilPayment <= 7);
 
   // Calcular estadísticas
-  const totalIncome = transactions
+  const totalIncome = (transactions || [])
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions
+  const totalExpenses = (transactions || [])
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalExpenses;
 
-  const activeServices = services.filter(s => s.isActive);
+  const activeServices = (services || []).filter(s => s.isActive);
   const monthlyServiceCost = activeServices
     .filter(s => s.frequency === 'monthly')
     .reduce((sum, s) => sum + s.amount, 0);
@@ -84,13 +84,13 @@ export default function DashboardPage() {
       title: "Gestionar Propiedades",
       href: "/properties",
       icon: Building,
-      description: `${properties.length} propiedades registradas`
+      description: `${(properties || []).length} propiedades registradas`
     },
     {
       title: "Gestionar Vehículos",
       href: "/vehicles",
       icon: Car,
-      description: `${vehicles.length} vehículos registrados`
+      description: `${(vehicles || []).length} vehículos registrados`
     },
     {
       title: "Ver Calendario",

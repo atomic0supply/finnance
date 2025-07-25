@@ -12,10 +12,10 @@ export function PublicHeader() {
             <span className="ml-2 text-sm text-gray-500">v2.0</span>
           </Link>
           <div className="flex gap-4">
-            <Link href="/login">
+            <Link href="/sign-in">
               <Button variant="ghost">Iniciar Sesión</Button>
             </Link>
-            <Link href="/register">
+            <Link href="/sign-up">
               <Button>Registrarse</Button>
             </Link>
           </div>

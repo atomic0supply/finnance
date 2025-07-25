@@ -77,13 +77,13 @@ export default function VehiclesPage() {
   const handleEdit = (vehicle: any) => {
     setEditingVehicle(vehicle);
     setFormData({
-      name: vehicle.name,
-      brand: vehicle.brand,
-      model: vehicle.model,
-      year: vehicle.year.toString(),
-      plate: vehicle.plate,
-      type: vehicle.type,
-      notes: vehicle.notes || ""
+      name: vehicle?.name || "",
+      brand: vehicle?.brand || "",
+      model: vehicle?.model || "",
+      year: vehicle?.year?.toString() || "",
+      plate: vehicle?.plate || "",
+      type: vehicle?.type || "car",
+      notes: vehicle?.notes || ""
     });
     setIsDialogOpen(true);
   };
@@ -97,9 +97,9 @@ export default function VehiclesPage() {
 
   const getTotalSpent = (vehicleId: string) => {
     const transactions = getTransactionsByVehicle(vehicleId);
-    return transactions
-      .filter(t => t.type === 'expense')
-      .reduce((total, t) => total + t.amount, 0);
+    return (transactions || [])
+      .filter(t => t && t.type === 'expense')
+      .reduce((total, t) => total + (t?.amount || 0), 0);
   };
 
   return (
@@ -222,7 +222,7 @@ export default function VehiclesPage() {
         </Dialog>
       </div>
 
-      {vehicles.length === 0 ? (
+      {(vehicles || []).length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Car className="h-12 w-12 text-gray-400 mb-4" />
@@ -235,7 +235,7 @@ export default function VehiclesPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Mis Vehículos ({vehicles.length})</CardTitle>
+            <CardTitle>Mis Vehículos ({(vehicles || []).length})</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -251,8 +251,8 @@ export default function VehiclesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vehicles.map((vehicle) => {
-                  const Icon = vehicleTypeIcons[vehicle.type];
+                {(vehicles || []).filter(vehicle => vehicle && vehicle.id).map((vehicle) => {
+                  const Icon = vehicleTypeIcons[vehicle?.type] || Car;
                   const totalSpent = getTotalSpent(vehicle.id);
                   
                   return (
@@ -266,7 +266,7 @@ export default function VehiclesPage() {
                       <TableCell>{vehicle.brand} {vehicle.model}</TableCell>
                       <TableCell>{vehicle.year}</TableCell>
                       <TableCell>{vehicle.plate}</TableCell>
-                      <TableCell>{vehicleTypeLabels[vehicle.type]}</TableCell>
+                      <TableCell>{vehicleTypeLabels[vehicle?.type] || 'N/A'}</TableCell>
                       <TableCell>
                         <span className="text-red-600 font-medium">
                           ${totalSpent.toLocaleString()}

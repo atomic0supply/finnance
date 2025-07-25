@@ -75,11 +75,11 @@ export default function PropertiesPage() {
   const handleEdit = (property: any) => {
     setEditingProperty(property);
     setFormData({
-      name: property.name,
-      type: property.type,
-      address: property.address,
-      value: property.value?.toString() || "",
-      notes: property.notes || ""
+      name: property?.name || "",
+      type: property?.type || "",
+      address: property?.address || "",
+      value: property?.value?.toString() || "",
+      notes: property?.notes || ""
     });
     setIsDialogOpen(true);
   };
@@ -93,9 +93,9 @@ export default function PropertiesPage() {
 
   const getTotalSpent = (propertyId: string) => {
     const transactions = getTransactionsByProperty(propertyId);
-    return transactions
-      .filter(t => t.type === 'expense')
-      .reduce((total, t) => total + t.amount, 0);
+    return (transactions || [])
+      .filter(t => t && t.type === 'expense')
+      .reduce((total, t) => total + (t?.amount || 0), 0);
   };
 
   return (
@@ -192,7 +192,7 @@ export default function PropertiesPage() {
         </Dialog>
       </div>
 
-      {properties.length === 0 ? (
+      {(properties || []).length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Building className="h-12 w-12 text-gray-400 mb-4" />
@@ -205,7 +205,7 @@ export default function PropertiesPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Mis Propiedades ({properties.length})</CardTitle>
+            <CardTitle>Mis Propiedades ({(properties || []).length})</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -220,8 +220,8 @@ export default function PropertiesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {properties.map((property) => {
-                  const Icon = propertyTypeIcons[property.type];
+                {(properties || []).filter(property => property && property.id).map((property) => {
+                  const Icon = propertyTypeIcons[property?.type] || Building;
                   const totalSpent = getTotalSpent(property.id);
                   
                   return (
@@ -232,7 +232,7 @@ export default function PropertiesPage() {
                           {property.name}
                         </div>
                       </TableCell>
-                      <TableCell>{propertyTypeLabels[property.type]}</TableCell>
+                      <TableCell>{propertyTypeLabels[property?.type] || 'N/A'}</TableCell>
                       <TableCell>{property.address}</TableCell>
                       <TableCell>
                         {property.value ? `$${property.value.toLocaleString()}` : "N/A"}

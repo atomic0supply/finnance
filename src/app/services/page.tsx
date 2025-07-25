@@ -90,14 +90,14 @@ export default function ServicesPage() {
   const handleEdit = (service: any) => {
     setEditingService(service);
     setFormData({
-      name: service.name,
-      type: service.type,
-      amount: service.amount.toString(),
-      frequency: service.frequency,
-      nextPayment: service.nextPayment,
-      propertyId: service.propertyId || "",
-      vehicleId: service.vehicleId || "",
-      notes: service.notes || ""
+      name: service?.name || "",
+      type: service?.type || "subscription",
+      amount: service?.amount?.toString() || "",
+      frequency: service?.frequency || "monthly",
+      nextPayment: service?.nextPayment || "",
+      propertyId: service?.propertyId || "",
+      vehicleId: service?.vehicleId || "",
+      notes: service?.notes || ""
     });
     setIsDialogOpen(true);
   };
@@ -123,12 +123,12 @@ export default function ServicesPage() {
   };
 
   const getAssociatedName = (service: any) => {
-    if (service.propertyId) {
-      const property = properties.find(p => p.id === service.propertyId);
+    if (service?.propertyId) {
+      const property = (properties || []).find(p => p?.id === service.propertyId);
       return property ? `📍 ${property.name}` : "";
     }
-    if (service.vehicleId) {
-      const vehicle = vehicles.find(v => v.id === service.vehicleId);
+    if (service?.vehicleId) {
+      const vehicle = (vehicles || []).find(v => v?.id === service.vehicleId);
       return vehicle ? `🚗 ${vehicle.name}` : "";
     }
     return "";
@@ -234,7 +234,7 @@ export default function ServicesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Ninguna</SelectItem>
-                      {properties.map((property) => (
+                      {(properties || []).map((property) => (
                         <SelectItem key={property.id} value={property.id}>
                           {property.name}
                         </SelectItem>
@@ -251,7 +251,7 @@ export default function ServicesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Ninguno</SelectItem>
-                      {vehicles.map((vehicle) => (
+                      {(vehicles || []).map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>
                           {vehicle.name}
                         </SelectItem>
@@ -284,7 +284,7 @@ export default function ServicesPage() {
         </Dialog>
       </div>
 
-      {services.length === 0 ? (
+      {(services || []).length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Settings className="h-12 w-12 text-gray-400 mb-4" />
@@ -297,7 +297,7 @@ export default function ServicesPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Mis Servicios ({services.length})</CardTitle>
+            <CardTitle>Mis Servicios ({(services || []).length})</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -314,8 +314,8 @@ export default function ServicesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {services.map((service) => {
-                  const Icon = serviceTypeIcons[service.type];
+                {(services || []).filter(service => service && service.id).map((service) => {
+                  const Icon = serviceTypeIcons[service?.type] || Settings;
                   const daysUntilPayment = getDaysUntilPayment(service.nextPayment);
                   const associatedName = getAssociatedName(service);
                   
@@ -327,7 +327,7 @@ export default function ServicesPage() {
                           {service.name}
                         </div>
                       </TableCell>
-                      <TableCell>{serviceTypeLabels[service.type]}</TableCell>
+                      <TableCell>{serviceTypeLabels[service?.type] || 'N/A'}</TableCell>
                       <TableCell>${service.amount.toLocaleString()}</TableCell>
                       <TableCell>{frequencyLabels[service.frequency]}</TableCell>
                       <TableCell>

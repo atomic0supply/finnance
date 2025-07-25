@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and user management
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clerkId      String?  @unique @map("clerk_id") @db.VarChar(255) // Clerk user ID
+  email        String   @unique @db.VarChar(255)
+  passwordHash String?  @map("password_hash") @db.VarChar(255) // Optional for Clerk users
+  name         String   @db.VarChar(200)
+  role         String   @default("user") @db.VarChar(20)
+  isActive     Boolean  @default(true) @map("is_active")
+  lastLogin    DateTime? @map("last_login") @db.Timestamptz
+  preferences  Json?    @db.JsonB
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  transactions Transaction[]
+  properties   Property[]
+  vehicles     Vehicle[]
+  services     Service[]
+
+  @@index([email])
+  @@index([clerkId])
+  @@index([role])
+  @@map("users")
+}
+
+// Transaction model for financial transactions
+model Transaction {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String      @map("user_id") @db.Uuid
+  amount      Decimal     @db.Decimal(12, 2)
+  description String      @db.VarChar(255)
+  category    String      @db.VarChar(100)
+  type        String      @db.VarChar(20) // 'income' or 'expense'
+  date        DateTime    @db.Date
+  notes       String?     @db.Text
+  propertyId  String?     @map("property_id") @db.Uuid
+  vehicleId   String?     @map("vehicle_id") @db.Uuid
+  serviceId   String?     @map("service_id") @db.Uuid
+  isRecurring Boolean     @default(false) @map("is_recurring")
+  status      String      @default("completed") @db.VarChar(20)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id])
+  vehicle  Vehicle?  @relation(fields: [vehicleId], references: [id])
+  service  Service?  @relation(fields: [serviceId], references: [id])
+
+  @@index([userId])
+  @@index([date])
+  @@index([category])
+  @@index([type])
+  @@index([propertyId])
+  @@index([vehicleId])
+  @@index([serviceId])
+  @@map("transactions")
+}
+
+// Property model for real estate management
+model Property {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @db.VarChar(255)
+  type      String   @db.VarChar(50) // 'home', 'villa', 'apartment', 'office', 'other'
+  address   String   @db.Text
+  value     Decimal? @db.Decimal(12, 2)
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  services     Service[]
+
+  @@index([userId])
+  @@index([type])
+  @@map("properties")
+}
+
+// Vehicle model for vehicle management
+model Vehicle {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @db.VarChar(255)
+  brand     String   @db.VarChar(100)
+  model     String   @db.VarChar(100)
+  year      Int      @db.Integer
+  plate     String   @db.VarChar(20)
+  type      String   @db.VarChar(50) // 'car', 'motorcycle', 'truck', 'other'
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  services     Service[]
+
+  @@index([userId])
+  @@index([brand])
+  @@index([type])
+  @@map("vehicles")
+}
+
+// Service model for recurring services and subscriptions
+model Service {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  type        String   @db.VarChar(100) // 'subscription', 'utility', 'membership', 'insurance', 'other'
+  amount      Decimal  @db.Decimal(12, 2)
+  frequency   String   @db.VarChar(20) // 'monthly', 'quarterly', 'yearly'
+  nextPayment DateTime @map("next_payment") @db.Date
+  propertyId  String?  @map("property_id") @db.Uuid
+  vehicleId   String?  @map("vehicle_id") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property     Property?     @relation(fields: [propertyId], references: [id])
+  vehicle      Vehicle?      @relation(fields: [vehicleId], references: [id])
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([type])
+  @@index([nextPayment])
+  @@index([isActive])
+  @@index([propertyId])
+  @@index([vehicleId])
+  @@map("services")
+}

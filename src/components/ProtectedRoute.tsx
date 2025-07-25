@@ -22,7 +22,7 @@ export default function ProtectedRoute({
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/sign-in');
       return;
     }
 

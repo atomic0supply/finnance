@@ -1,65 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
+import { handleApiError, successResponse } from '@/lib/api-utils';
+import { UserUpdateSchema } from '@/lib/validations';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = requireAuth(request);
+    const { userId } = await auth();
     
-    if (authResult instanceof NextResponse) {
-      return authResult;
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const { user } = authResult;
+    // Find or create user in our database
+    let user = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    });
 
-    return NextResponse.json(user);
+    if (!user) {
+      // Create user if doesn't exist (first time login)
+      user = await prisma.user.create({
+        data: {
+          clerkId: userId,
+          email: '', // Will be updated from Clerk webhook
+          name: '', // Will be updated from Clerk webhook
+        }
+      });
+    }
+
+    return successResponse(user);
 
   } catch (error) {
     console.error('Profile fetch error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    const authResult = requireAuth(request);
+    const { userId } = await auth();
     
-    if (authResult instanceof NextResponse) {
-      return authResult;
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const { user } = authResult;
     const body = await request.json();
 
-    // Validate and sanitize update data
-    const allowedUpdates = ['name', 'preferences'];
-    const updates: any = {};
-    
-    for (const key of allowedUpdates) {
-      if (body[key] !== undefined) {
-        updates[key] = body[key];
-      }
-    }
+    // Validate update data with Zod
+    const validatedData = UserUpdateSchema.parse(body);
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(validatedData).length === 0) {
       return NextResponse.json(
         { error: 'No valid updates provided' },
         { status: 400 }
       );
     }
 
-    // Update user (in a real app, update database)
-    const updatedUser = { ...user, ...updates };
+    // Update user in database
+    const updatedUser = await prisma.user.update({
+      where: { clerkId: userId },
+      data: validatedData
+    });
 
-    return NextResponse.json(updatedUser);
+    return successResponse(updatedUser);
 
   } catch (error) {
     console.error('Profile update error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

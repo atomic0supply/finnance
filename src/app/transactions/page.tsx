@@ -27,9 +27,9 @@ import { toast } from "sonner";
 
 export default function TransactionsPage() {
   const { 
-    transactions, 
-    properties, 
-    vehicles,
+    transactions = [], 
+    properties = [], 
+    vehicles = [],
     addTransaction, 
     updateTransaction, 
     deleteTransaction,
@@ -107,14 +107,14 @@ export default function TransactionsPage() {
   const handleEdit = (transaction: any) => {
     setEditingTransaction(transaction);
     setFormData({
-      type: transaction.type,
-      category: transaction.category,
-      amount: transaction.amount.toString(),
-      description: transaction.description,
-      date: transaction.date,
-      propertyId: transaction.propertyId || "",
-      vehicleId: transaction.vehicleId || "",
-      receipt: transaction.receipt || ""
+      type: transaction?.type || "expense",
+      category: transaction?.category || "",
+      amount: transaction?.amount?.toString() || "",
+      description: transaction?.description || "",
+      date: transaction?.date || "",
+      propertyId: transaction?.propertyId || "",
+      vehicleId: transaction?.vehicleId || "",
+      receipt: transaction?.receipt || ""
     });
     setIsDialogOpen(true);
   };
@@ -132,24 +132,24 @@ export default function TransactionsPage() {
   };
 
   const getAssociatedName = (transaction: any) => {
-    if (transaction.propertyId) {
-      const property = properties.find(p => p.id === transaction.propertyId);
+    if (transaction?.propertyId) {
+      const property = (properties || []).find(p => p?.id === transaction.propertyId);
       return property ? { name: property.name, icon: Building } : null;
     }
-    if (transaction.vehicleId) {
-      const vehicle = vehicles.find(v => v.id === transaction.vehicleId);
+    if (transaction?.vehicleId) {
+      const vehicle = (vehicles || []).find(v => v?.id === transaction.vehicleId);
       return vehicle ? { name: vehicle.name, icon: Car } : null;
     }
     return null;
   };
 
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = (transactions || [])
+    .filter(t => t && t.type === 'income')
+    .reduce((sum, t) => sum + (t?.amount || 0), 0);
 
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = (transactions || [])
+    .filter(t => t && t.type === 'expense')
+    .reduce((sum, t) => sum + (t?.amount || 0), 0);
 
   const balance = totalIncome - totalExpenses;
 
@@ -166,139 +166,147 @@ export default function TransactionsPage() {
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Importar
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Transacción
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingTransaction ? "Editar Transacción" : "Agregar Nueva Transacción"}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="type">Tipo *</Label>
-                    <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="income">Ingreso</SelectItem>
-                        <SelectItem value="expense">Gasto</SelectItem>
-                      </SelectContent>
-                    </Select>
+          <Button 
+              onClick={() => {
+                console.log('Botón clickeado, estado actual:', isDialogOpen);
+                setIsDialogOpen(true);
+                console.log('Estado después de setIsDialogOpen(true):', true);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Transacción
+            </Button>
+            
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingTransaction ? "Editar Transacción" : "Agregar Nueva Transacción"}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="type">Tipo *</Label>
+                      <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="income">Ingreso</SelectItem>
+                          <SelectItem value="expense">Gasto</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="category">Categoría *</Label>
+                      <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            category ? (
+                              <SelectItem key={category} value={category}>
+                                {category}
+                              </SelectItem>
+                            ) : null
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="amount">Monto *</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        step="0.01"
+                        value={formData.amount}
+                        onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="date">Fecha *</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                        required
+                      />
+                    </div>
                   </div>
                   
                   <div>
-                    <Label htmlFor="category">Categoría *</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar categoría" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="amount">Monto *</Label>
+                    <Label htmlFor="description">Descripción *</Label>
                     <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      value={formData.amount}
-                      onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                      placeholder="0.00"
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Descripción de la transacción"
                       required
                     />
                   </div>
                   
-                  <div>
-                    <Label htmlFor="date">Fecha *</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="description">Descripción *</Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Descripción de la transacción"
-                    required
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="propertyId">Propiedad (opcional)</Label>
-                    <Select value={formData.propertyId} onValueChange={(value) => setFormData(prev => ({ ...prev, propertyId: value, vehicleId: "" }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar propiedad" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Ninguna</SelectItem>
-                        {properties.map((property) => (
-                          <SelectItem key={property.id} value={property.id}>
-                            {property.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="propertyId">Propiedad (opcional)</Label>
+                      <Select value={formData.propertyId} onValueChange={(value) => setFormData(prev => ({ ...prev, propertyId: value, vehicleId: "" }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar propiedad" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Ninguna</SelectItem>
+                          {Array.isArray(properties) && properties.map((property) => (
+                            property?.id && property?.name ? (
+                              <SelectItem key={property.id} value={property.id}>
+                                {property.name}
+                              </SelectItem>
+                            ) : null
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="vehicleId">Vehículo (opcional)</Label>
+                      <Select value={formData.vehicleId} onValueChange={(value) => setFormData(prev => ({ ...prev, vehicleId: value, propertyId: "" }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar vehículo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Ninguno</SelectItem>
+                          {Array.isArray(vehicles) && vehicles.map((vehicle) => (
+                            vehicle?.id && vehicle?.name ? (
+                              <SelectItem key={vehicle.id} value={vehicle.id}>
+                                {vehicle.name}
+                              </SelectItem>
+                            ) : null
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="vehicleId">Vehículo (opcional)</Label>
-                    <Select value={formData.vehicleId} onValueChange={(value) => setFormData(prev => ({ ...prev, vehicleId: value, propertyId: "" }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar vehículo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Ninguno</SelectItem>
-                        {vehicles.map((vehicle) => (
-                          <SelectItem key={vehicle.id} value={vehicle.id}>
-                            {vehicle.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit">
+                      {editingTransaction ? "Actualizar" : "Agregar"}
+                    </Button>
                   </div>
-                </div>
-                
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit">
-                    {editingTransaction ? "Actualizar" : "Agregar"}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                </form>
+              </DialogContent>
+            </Dialog>
         </div>
       </div>
 
@@ -342,7 +350,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* Tabla de transacciones */}
-      {transactions.length === 0 ? (
+      {(transactions || []).length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <CreditCard className="h-12 w-12 text-gray-400 mb-4" />
@@ -355,7 +363,7 @@ export default function TransactionsPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Historial de Transacciones ({transactions.length})</CardTitle>
+            <CardTitle>Historial de Transacciones ({(transactions || []).length})</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -371,8 +379,9 @@ export default function TransactionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                {(transactions || [])
+                  .filter(transaction => transaction && transaction.id)
+                  .sort((a, b) => new Date(b?.date || '').getTime() - new Date(a?.date || '').getTime())
                   .map((transaction) => {
                     const associated = getAssociatedName(transaction);
                     
@@ -380,18 +389,18 @@ export default function TransactionsPage() {
                       <TableRow key={transaction.id}>
                         <TableCell>
                           <Badge 
-                            variant={transaction.type === 'income' ? 'default' : 'secondary'}
-                            className={transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
+                            variant={transaction?.type === 'income' ? 'default' : 'secondary'}
+                            className={transaction?.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
                           >
-                            {transaction.type === 'income' ? 'Ingreso' : 'Gasto'}
+                            {transaction?.type === 'income' ? 'Ingreso' : 'Gasto'}
                           </Badge>
                         </TableCell>
-                        <TableCell>{transaction.category}</TableCell>
-                        <TableCell>{transaction.description}</TableCell>
-                        <TableCell className={`font-medium ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                          ${transaction.amount.toLocaleString()}
+                        <TableCell>{transaction?.category || 'N/A'}</TableCell>
+                        <TableCell>{transaction?.description || 'N/A'}</TableCell>
+                        <TableCell className={`font-medium ${transaction?.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                          ${(transaction?.amount || 0).toLocaleString()}
                         </TableCell>
-                        <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{transaction?.date ? new Date(transaction.date).toLocaleDateString() : 'N/A'}</TableCell>
                         <TableCell>
                           {associated && (
                             <div className="flex items-center gap-2">
@@ -412,14 +421,14 @@ export default function TransactionsPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDuplicate(transaction.id)}
+                              onClick={() => handleDuplicate(transaction?.id || '')}
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDelete(transaction.id)}
+                              onClick={() => handleDelete(transaction?.id || '')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

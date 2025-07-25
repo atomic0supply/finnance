@@ -21,12 +21,12 @@ export default function HomePage() {
             control de gastos, seguimiento de propiedades y vehículos, y reportes detallados.
           </p>
           <div className="mt-10 flex justify-center gap-4">
-            <Link href="/register">
+            <Link href="/sign-up">
               <Button size="lg" className="px-8 py-3">
                 Comenzar Gratis
               </Button>
             </Link>
-            <Link href="/login">
+            <Link href="/sign-in">
               <Button size="lg" variant="outline" className="px-8 py-3">
                 Iniciar Sesión
               </Button>
@@ -222,7 +222,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-8">
-            <Link href="/login">
+            <Link href="/sign-in">
               <Button size="lg" className="px-8 py-3">
                 Probar Ahora
               </Button>

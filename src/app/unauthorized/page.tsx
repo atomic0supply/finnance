@@ -42,7 +42,7 @@ export default function UnauthorizedPage() {
             <Button 
               onClick={() => {
                 logout();
-                router.push('/login');
+                router.push('/sign-in');
               }} 
               variant="destructive"
               className="w-full"

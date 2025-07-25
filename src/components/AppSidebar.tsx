@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuthStore } from "@/stores/useAuthStore";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const navigationItems = [
@@ -62,10 +62,11 @@ const navigationItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user } = useUser();
+  const { signOut } = useClerk();
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     router.push('/');
   };
 
@@ -84,18 +85,28 @@ export function AppSidebar() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-blue-600" />
+                      {user.imageUrl ? (
+                        <img 
+                          src={user.imageUrl} 
+                          alt={user.fullName || 'User'} 
+                          className="w-8 h-8 rounded-full"
+                        />
+                      ) : (
+                        <User className="h-4 w-4 text-blue-600" />
+                      )}
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                      <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {user.fullName || user.firstName || user.emailAddresses[0]?.emailAddress}
+                      </p>
+                      <p className="text-xs text-gray-500">Usuario</p>
                     </div>
                   </div>
                   <ChevronDown className="h-4 w-4 text-gray-400" />
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => router.push('/api/auth/profile')}>
+                <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Mi Perfil</span>
                 </DropdownMenuItem>

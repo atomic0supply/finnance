@@ -209,7 +209,7 @@ export default function CalendarPage() {
                 <div className="pt-2 border-t">
                   <div className="flex items-center justify-between font-semibold">
                     <span>Total servicios activos</span>
-                    <span>{services.filter(s => s.isActive).length}</span>
+                    <span>{(services || []).filter(s => s.isActive).length}</span>
                   </div>
                 </div>
               </div>
